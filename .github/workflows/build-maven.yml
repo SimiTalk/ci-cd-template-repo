@@ -30,11 +30,18 @@ jobs:
         with:
           distribution: temurin
           java-version: '8'
+      
+      - name: Checkout Template Repo
+        uses: actions/checkout@v4
+        with:
+          repository: SimiTalk/ci-cd-template-repo
+          # token: ${{ secrets.GITHUB_TOKEN }}
+          path: template
 
       # Build the Maven project
       - name: Build with Maven
         run: |
-          mvn -U clean package --settings .github/maven/settings.xml -Dmaven.test.skip=true
+          mvn -U clean package --settings /tmplate/.github/maven/settings.xml -Dmaven.test.skip=true
         # env:
         #   MAVEN_REPO_USERNAME: ${{ secrets.MAVEN_REPO_USERNAME }}
         #   MAVEN_REPO_PASSWORD: ${{ secrets.MAVEN_REPO_PASSWORD }}
