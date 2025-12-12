@@ -40,7 +40,7 @@ jobs:
 
       # Upload the build artifact (optional)
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: build-output
           path: target/*.jar
