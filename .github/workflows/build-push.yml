@@ -25,37 +25,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repo
+      # -------------------------
+      # Checkout the business repo
+      # -------------------------
+      - name: Checkout Business Repo
         uses: actions/checkout@v4
 
       # -------------------------
-      # 版本识别：根据分支和标签来确定镜像版本
+      # Checkout the template repo to 'template' directory
+      # -------------------------
+      - name: Checkout Template Repo
+        uses: actions/checkout@v4
+        with:
+          repository: SimiTalk/ci-cd-template-repo
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: template
+
+      # -------------------------
+      # 版本识别
       # -------------------------
       - name: Detect Version
         id: detect
         run: |
           echo "GITHUB_REF=${GITHUB_REF}"
           echo "GITHUB_REF_TYPE=${GITHUB_REF_TYPE}"
+          echo "GITHUB_REF_NAME=${GITHUB_REF_NAME}"
 
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            # 如果是 release 标签，提取版本号
             VERSION=$(echo "${GITHUB_REF_NAME}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
             if [[ -z "$VERSION" ]]; then
-              echo "❌ 无法从 Tag 中解析版本号，Tag 格式必须为 release-x.y.z"
+              echo "❌ Tag 格式必须为 release-x.y.z"
               exit 1
             fi
             IMAGE_TAG="$VERSION"
-            echo "::set-output name=image_tag::${IMAGE_TAG}"
           elif [[ "${GITHUB_REF_NAME}" == "devops" ]]; then
             IMAGE_TAG="latest"
-            echo "::set-output name=image_tag::${IMAGE_TAG}"
           else
             echo "❌ 不支持的分支或 tag"
             exit 1
           fi
+          echo "::set-output name=image_tag::${IMAGE_TAG}"
 
       # -------------------------
-      # 登录 OCI Docker Registry（docker login）
+      # 登录 OCI Docker Registry
       # -------------------------
       - name: Login to OCIR
         env:
@@ -63,21 +75,23 @@ jobs:
           PASS: ${{ secrets.OCIR_AUTH_TOKEN }}
           REG: ${{ secrets.IMAGE_REGISTRY }}
         run: |
-          echo "${PASS}" | docker login "${REG}" \
-            -u "${USER}" \
-            --password-stdin
+          echo "${PASS}" | docker login "${REG}" -u "${USER}" --password-stdin
 
       # -------------------------
-      # 构建 Docker 镜像
+      # 设置 Docker Buildx
       # -------------------------
       - name: Set up Docker
         uses: docker/setup-buildx-action@v2
 
-      - name: Build Docker Image
+      # -------------------------
+      # 构建并推送 Docker 镜像
+      # -------------------------
+      - name: Build & Push Docker Image
         run: |
           IMAGE="${{ secrets.IMAGE_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ inputs.service_name }}:${{ steps.detect.outputs.image_tag }}"
           echo "Building Docker image: $IMAGE"
-          docker build -t "$IMAGE" -f "docker/Dockerfile.${{ inputs.service_name }}" .
+          # Docker build context 指向 template 目录，Dockerfile 路径相对 template
+          docker build -t "$IMAGE" -f "template/docker/Dockerfile.${{ inputs.service_name }}" template
           echo "Pushing Docker image: $IMAGE"
           docker push "$IMAGE"
           echo "::set-output name=image_uri::${IMAGE}"
