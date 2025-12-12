@@ -6,7 +6,7 @@ on:
       - devops
       # - blockchain-intl         # 针对 blockchain 分支的构建
     tags:
-      - 'release-intl*'               # 针对 release 标签的构建
+      - 'release-intl-*'               # 针对 release 标签的构建
 
 jobs:
   build-and-push:
