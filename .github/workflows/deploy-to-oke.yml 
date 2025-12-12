@@ -1,0 +1,99 @@
+name: Reusable CI (Java)
+
+on:
+  workflow_call:
+    inputs:
+      service_name:
+        required: true
+        type: string
+      env:
+        required: true
+        type: string
+        description: "部署环境（prod / staging / dev）"
+    secrets:
+      OCIR_USERNAME:
+        required: true
+      OCIR_AUTH_TOKEN:
+        required: true
+      OCIR_NAMESPACE:
+        required: true
+      IMAGE_REGISTRY:
+        required: true  # nrt.ocir.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      # -------------------------
+      # 版本识别：tag / branch
+      # -------------------------
+      - name: Detect Version
+        id: detect
+        run: |
+          echo "GITHUB_REF=${GITHUB_REF}"
+          echo "GITHUB_REF_TYPE=${GITHUB_REF_TYPE}"
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            # release-intl-2.1.5 → 2.1.5
+            VERSION=$(echo "${GITHUB_REF_NAME}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+            if [[ -z "$VERSION" ]]; then
+              echo "❌ 无法从 Tag 中解析版本号，Tag 格式必须为 release-intl-x.y.z"
+              exit 1
+            fi
+            IMAGE_TAG="$VERSION"
+            echo "trigger=tag" >> $GITHUB_OUTPUT
+          else
+            IMAGE_TAG="latest"
+            echo "trigger=branch" >> $GITHUB_OUTPUT
+          fi
+
+          echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+
+      # -------------------------
+      # Maven Build (Java 17)
+      # -------------------------
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Maven Package
+        run: |
+          mvn -B clean package -DskipTests
+
+      # -------------------------
+      # OCIR Login
+      # -------------------------
+      - name: Login to OCIR
+        env:
+          USER: ${{ secrets.OCIR_USERNAME }}
+          PASS: ${{ secrets.OCIR_AUTH_TOKEN }}
+          REG: ${{ secrets.IMAGE_REGISTRY }}
+        run: |
+          echo "${PASS}" | docker login "${REG}" \
+            -u "${USER}" \
+            --password-stdin
+
+      # -------------------------
+      # Build & Push Image
+      # -------------------------
+      - name: Build and Push Docker Image
+        env:
+          REG: ${{ secrets.IMAGE_REGISTRY }}
+          NS: ${{ secrets.OCIR_NAMESPACE }}
+          SERVICE: ${{ inputs.service_name }}
+          ENV: ${{ inputs.env }}
+          TAG: ${{ steps.detect.outputs.image_tag }}
+        run: |
+          IMAGE="${REG}/${NS}/${SERVICE}-${ENV}:${TAG}"
+          echo "📦 构建镜像: $IMAGE"
+
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+
+          echo "image_uri=${IMAGE}" >> $GITHUB_OUTPUT

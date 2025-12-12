@@ -1,0 +1,55 @@
+name: Deploy to OKE (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        required: true
+        type: string
+      release_name:
+        required: true
+        type: string
+      chart_path:
+        required: true
+        type: string
+      namespace:
+        required: true
+        type: string
+      image:
+        required: true
+        type: string
+      image_tag:
+        required: true
+        type: string
+    secrets:
+      KUBECONFIG_CONTENT:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}           # <-- GitHub Environment (prod) 用于审批/访问控制
+    steps:
+      - name: Checkout chart (optional)
+        uses: actions/checkout@v4
+
+      - name: Restore kubeconfig
+        id: kube
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_CONTENT }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Show cluster info (sanity)
+        run: |
+          kubectl version --short
+          kubectl get nodes -o wide
+
+      - name: Helm upgrade/install
+        run: |
+          helm repo add stable https://charts.helm.sh/stable || true
+          helm upgrade --install "${{ inputs.release_name }}" "${{ inputs.chart_path }}" \
+            --namespace "${{ inputs.namespace }}" --create-namespace \
+            --set image.repository="${{ inputs.image }}" \
+            --set image.tag="${{ inputs.image_tag }}" \
+            --wait --timeout 5m

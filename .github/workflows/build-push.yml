@@ -1,0 +1,55 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_call:
+    inputs:
+      service_name:
+        required: true
+        type: string
+      env:
+        required: true
+        type: string
+    secrets:
+      OCIR_USERNAME:
+        required: true
+      OCIR_AUTH_TOKEN:
+        required: true
+      OCIR_NAMESPACE:
+        required: true
+      IMAGE_REGISTRY:
+        required: true  
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      # -------------------------
+      # 获取 Dockerfile 和 Helm Chart
+      # -------------------------
+      - name: Checkout CI/CD Template Repo (for Dockerfile and Helm)
+        uses: actions/checkout@v4
+        with:
+          repository: your-org/ci-cd-template-repo  # 引用模板仓库
+          path: ci-cd-template-repo  # 将仓库内容下载到 ci-cd-template-repo 文件夹中
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      # -------------------------
+      # 构建 Docker 镜像
+      # -------------------------
+      - name: Build Docker Image
+        run: |
+          IMAGE_TAG="${{ inputs.env }}-${{ github.sha }}"
+          IMAGE="${{ secrets.IMAGE_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ inputs.service_name }}:${IMAGE_TAG}"
+          echo "Building Docker image: $IMAGE"
+          # 使用模板仓库中的 Dockerfile 路径
+          docker build -t "$IMAGE" -f "ci-cd-template-repo/docker/Dockerfile.${{ inputs.service_name }}" .
+          echo "Pushing Docker image: $IMAGE"
+          docker push "$IMAGE"
+
+          echo "image_uri=${IMAGE}" >> $GITHUB_OUTPUT
