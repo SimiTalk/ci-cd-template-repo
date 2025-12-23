@@ -81,7 +81,7 @@ jobs:
 
       - name: Build & Push Docker Image
         run: |
-          IMAGE="${{ secrets.IMAGE_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ inputs.service_name }}:${{ steps.detect.outputs.image_tag }}"
+          IMAGE="${{ secrets.IMAGE_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ inputs.service_name }}-${{ inputs.env }}:${{ steps.detect.outputs.image_tag }}"
           echo "Building: $IMAGE"
           docker build -t "$IMAGE" -f "template/docker/Dockerfile.java" .
           docker push "$IMAGE"
