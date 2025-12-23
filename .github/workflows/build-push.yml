@@ -64,7 +64,7 @@ jobs:
             echo "❌ 不支持的分支或 tag"
             exit 1
           fi
-          echo "::set-output name=image_tag::${IMAGE_TAG}"
+          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
 
       # -------------------------
       # 登录 OCI Docker Registry
@@ -90,8 +90,6 @@ jobs:
         run: |
           IMAGE="${{ secrets.IMAGE_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ inputs.service_name }}:${{ steps.detect.outputs.image_tag }}"
           echo "Building Docker image: $IMAGE"
-          # Docker build context 指向 template 目录，Dockerfile 路径相对 template
-          docker build -t "$IMAGE" -f "template/docker/Dockerfile.${{ inputs.service_name }}" template
-          echo "Pushing Docker image: $IMAGE"
+          docker build -t "$IMAGE" \
+            -f "template/docker/Dockerfile.${{ inputs.service_name }}" \ .
           docker push "$IMAGE"
-          echo "::set-output name=image_uri::${IMAGE}"
