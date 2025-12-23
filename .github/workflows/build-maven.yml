@@ -24,21 +24,13 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      # Cache Maven dependencies
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
 
-      # Set up Java environment
       - name: Set up JDK 8
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '8'
+          cache: maven
       
       - name: Checkout Template Repo
         uses: actions/checkout@v4
