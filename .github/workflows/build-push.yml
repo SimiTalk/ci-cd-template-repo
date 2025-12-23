@@ -91,5 +91,5 @@ jobs:
           IMAGE="${{ secrets.IMAGE_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ inputs.service_name }}:${{ steps.detect.outputs.image_tag }}"
           echo "Building Docker image: $IMAGE"
           docker build -t "$IMAGE" \
-            -f "template/docker/Dockerfile.${{ inputs.service_name }}" \ .
+            -f "template/docker/Dockerfile.${{ inputs.service_name }}"  .
           docker push "$IMAGE"
