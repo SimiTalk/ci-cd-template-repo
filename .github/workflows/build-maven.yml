@@ -1,4 +1,4 @@
-name: Build Maven Project
+name: Build Maven + Docker Push
 
 on:
   workflow_call:
@@ -9,21 +9,23 @@ on:
       env:
         required: true
         type: string
-    # secrets:
-    #   MAVEN_REPO_USERNAME:
-    #     required: true
-    #   MAVEN_REPO_PASSWORD:
-    #     required: true
+    secrets:
+      OCIR_USERNAME:
+        required: true
+      OCIR_AUTH_TOKEN:
+        required: true
+      OCIR_NAMESPACE:
+        required: true
+      IMAGE_REGISTRY:
+        required: true
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository
       - name: Checkout Repo
         uses: actions/checkout@v4
-
 
       - name: Set up JDK 8
         uses: actions/setup-java@v4
@@ -31,25 +33,55 @@ jobs:
           distribution: temurin
           java-version: '8'
           cache: maven
-      
+
       - name: Checkout Template Repo
         uses: actions/checkout@v4
         with:
           repository: SimiTalk/ci-cd-template-repo
-          # token: ${{ secrets.GITHUB_TOKEN }}
           path: template
 
-      # Build the Maven project
+      - name: Detect Version
+        id: detect
+        run: |
+          echo "GITHUB_REF=${GITHUB_REF}"
+          echo "GITHUB_REF_TYPE=${GITHUB_REF_TYPE}"
+          echo "GITHUB_REF_NAME=${GITHUB_REF_NAME}"
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION=$(echo "${GITHUB_REF_NAME}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+            if [[ -z "$VERSION" ]]; then
+              echo "❌ Tag 格式必须为 release-x.y.z"
+              exit 1
+            fi
+            IMAGE_TAG="$VERSION"
+          elif [[ "${GITHUB_REF_NAME}" == "devops" ]]; then
+            IMAGE_TAG="latest"
+          else
+            echo "❌ 不支持的分支或 tag"
+            exit 1
+          fi
+
+          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+
       - name: Build with Maven
         run: |
-          mvn -U clean package --settings template/.github/maven/settings.xml -Dmaven.test.skip=true
-        # env:
-        #   MAVEN_REPO_USERNAME: ${{ secrets.MAVEN_REPO_USERNAME }}
-        #   MAVEN_REPO_PASSWORD: ${{ secrets.MAVEN_REPO_PASSWORD }}
+          mvn clean package --settings template/.github/maven/settings.xml -Dmaven.test.skip=true
+          JAR=$(ls -1 target/*.jar | grep -Ev '(sources|javadoc|original)' | head -n 1)
+          echo "Detected jar: $JAR"
+          cp "$JAR" target/app.jar
+          ls -lah target
 
-      # Upload the build artifact (optional)
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-output
-          path: target/*.jar
+      - name: Login to OCIR
+        env:
+          USER: ${{ secrets.OCIR_USERNAME }}
+          PASS: ${{ secrets.OCIR_AUTH_TOKEN }}
+          REG: ${{ secrets.IMAGE_REGISTRY }}
+        run: |
+          echo "${PASS}" | docker login "${REG}" -u "${USER}" --password-stdin
+
+      - name: Build & Push Docker Image
+        run: |
+          IMAGE="${{ secrets.IMAGE_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ inputs.service_name }}:${{ steps.detect.outputs.image_tag }}"
+          echo "Building: $IMAGE"
+          docker build -t "$IMAGE" -f "template/docker/Dockerfile.java" .
+          docker push "$IMAGE"
