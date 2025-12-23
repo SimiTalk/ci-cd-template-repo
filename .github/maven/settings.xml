@@ -1,22 +1,18 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
 
-  <!-- 关键：不要用 ~ ，用 ${user.home}，保证 cache:maven 命中正确目录 -->
   <localRepository>${user.home}/.m2/repository</localRepository>
 
-  <!-- 关键：只保留一个镜像，且使用 HTTPS -->
   <mirrors>
+    <!-- ✅ 关键：恢复 *，避免缺依赖，但改为 HTTPS -->
     <mirror>
-      <id>aliyun-central</id>
-      <name>Aliyun Maven Central Mirror (HTTPS)</name>
-      <!-- 只镜像 central，避免把所有仓库都“劫持”到一个镜像导致缺包/慢重试 -->
-      <mirrorOf>central</mirrorOf>
-      <url>https://maven.aliyun.com/nexus/content/repositories/central/</url>
+      <id>aliyun-public-group</id>
+      <name>Aliyun Maven Public Group (HTTPS)</name>
+      <mirrorOf>*</mirrorOf>
+      <url>https://maven.aliyun.com/nexus/content/groups/public</url>
     </mirror>
 
-    <!-- Maven 3.8+ 的 HTTP blocker（保留即可） -->
     <mirror>
       <id>maven-default-http-blocker</id>
       <mirrorOf>external:http:*</mirrorOf>
@@ -25,31 +21,4 @@
       <blocked>true</blocked>
     </mirror>
   </mirrors>
-
-  <!-- 可选：在 CI 环境里统一更“稳”的超时/重试参数 -->
-  <profiles>
-    <profile>
-      <id>github-actions</id>
-      <properties>
-        <!-- 下载更稳：减少无限等待 -->
-        <maven.wagon.httpconnectionManager.ttlSeconds>60</maven.wagon.httpconnectionManager.ttlSeconds>
-        <maven.wagon.http.retryHandler.count>3</maven.wagon.http.retryHandler.count>
-
-        <!-- 连接/读取超时（单位 ms） -->
-        <maven.wagon.http.connectionTimeout>10000</maven.wagon.http.connectionTimeout>
-        <maven.wagon.http.readTimeout>60000</maven.wagon.http.readTimeout>
-
-        <!-- 并发下载（Maven 3.9+ 支持更好；低版本也不会报错） -->
-        <maven.artifact.threads>8</maven.artifact.threads>
-
-        <!-- 避免一些交互/颜色输出影响日志 -->
-        <style.color>never</style.color>
-      </properties>
-    </profile>
-  </profiles>
-
-  <activeProfiles>
-    <activeProfile>github-actions</activeProfile>
-  </activeProfiles>
-
 </settings>
