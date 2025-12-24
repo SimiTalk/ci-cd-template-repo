@@ -53,13 +53,11 @@ jobs:
 
       - name: Build & Sonar Scan
         env:
-          MAVEN_OPTS: --add-opens jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED
+        #   MAVEN_OPTS: --add-opens jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
-          mvn ${{ inputs.maven_args }}  \
+          mvn -B verify  \
             org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.host.url="${SONAR_HOST_URL}" \
-            -Dsonar.login="${SONAR_TOKEN}" \
             -Dsonar.projectKey="${{ inputs.sonar_project_key }}" \
             -Dsonar.projectName="${{ inputs.sonar_project_name }}"
