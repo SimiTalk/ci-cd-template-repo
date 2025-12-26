@@ -26,6 +26,15 @@ on:
       env:
         required: true
         type: string
+    secrets:
+      OCIR_USERNAME:
+        required: true
+      OCIR_AUTH_TOKEN:
+        required: true
+      OCIR_NAMESPACE:
+        required: true
+      IMAGE_REGISTRY:
+        required: true
 
 jobs:
   build:
