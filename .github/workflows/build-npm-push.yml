@@ -45,6 +45,14 @@ jobs:
 
       - name: Build (prod)
         run: npm run build:${{ inputs.env }}
+      
+      - name: Debug workspace
+        run: |
+          echo "WORKSPACE=$GITHUB_WORKSPACE"
+          pwd
+          ls -lah
+          echo "Find dist/build:"
+          find . -maxdepth 4 -type d -name dist -o -name build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
