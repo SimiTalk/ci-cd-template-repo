@@ -37,7 +37,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node_version }}
-          cache: "yarn"
+        #   cache: "yarn"
         #   cache-dependency-path: ${{ inputs.working_directory }}/yarn.lock
 
       # 可选：避免 yarn 缓存目录不可写的 warning（你之前遇到过类似问题）
