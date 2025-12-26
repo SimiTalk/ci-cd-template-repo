@@ -10,7 +10,7 @@ on:
         required: false
         type: string
         default: "nrt.ocir.io/idpdeuxb29fz/devops:openjdk17-alpine"
-            java_version:
+      java_version:
         required: false
         type: string
         default: "8"
