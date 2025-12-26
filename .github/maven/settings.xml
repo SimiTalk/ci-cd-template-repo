@@ -5,14 +5,7 @@
   <localRepository>${user.home}/.m2/repository</localRepository>
 
   <mirrors>
-    <!-- ✅ 关键：恢复 *，避免缺依赖，但改为 HTTPS -->
-    <mirror>
-      <id>aliyun-public-group</id>
-      <name>Aliyun Maven Public Group (HTTPS)</name>
-      <mirrorOf>*</mirrorOf>
-      <url>https://maven.aliyun.com/nexus/content/groups/public</url>
-    </mirror>
-
+    <!-- 只阻止 HTTP 仓库，避免被注入不安全源；HTTPS 正常用 -->
     <mirror>
       <id>maven-default-http-blocker</id>
       <mirrorOf>external:http:*</mirrorOf>
@@ -21,4 +14,5 @@
       <blocked>true</blocked>
     </mirror>
   </mirrors>
+
 </settings>
