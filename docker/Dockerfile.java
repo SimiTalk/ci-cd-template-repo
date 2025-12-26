@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=nrt.ocir.io/idpdeuxb29fz/devops:openjdk17-alpine
+ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 LABEL maintainer=caoxiaopeng
 

@@ -7,7 +7,7 @@ on:
         required: true
         type: string
       base_image:
-        required: true
+        required: false
         type: string
         default: "nrt.ocir.io/idpdeuxb29fz/devops:openjdk17-alpine"
       env:
