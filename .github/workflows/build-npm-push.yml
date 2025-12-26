@@ -45,7 +45,8 @@ jobs:
 
       - name: Build (prod)
         run: npm run build:${{ inputs.env }}
-            - name: Detect Version
+      
+      - name: Detect Version
         id: detect
         run: |
           echo "GITHUB_REF=${GITHUB_REF}"
