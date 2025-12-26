@@ -3,6 +3,12 @@ name: Build Frontend (Yarn)
 on:
   workflow_call:
     inputs:
+      service_name:
+        required: true
+        type: string
+      base_image:
+        required: false
+        type: string
       node_version:
         required: false
         type: string
