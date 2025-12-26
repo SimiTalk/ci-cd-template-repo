@@ -1,4 +1,5 @@
-FROM nrt.ocir.io/idpdeuxb29fz/devops:openjdk8-python3.9-alpine
+ARG BASE_IMAGE=nrt.ocir.io/idpdeuxb29fz/devops:openjdk17-alpine
+FROM ${BASE_IMAGE}
 LABEL maintainer=caoxiaopeng
 
 ENV APP_HOME=/app
