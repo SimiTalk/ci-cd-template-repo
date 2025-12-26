@@ -1,0 +1,53 @@
+name: Build Frontend (Yarn)
+
+on:
+  workflow_call:
+    inputs:
+      node_version:
+        required: false
+        type: string
+        default: "18"
+      # 如果你的前端不在仓库根目录，比如 web/ 或 frontend/，可传这个
+      working_directory:
+        required: false
+        type: string
+        default: "."
+      # 构建产物目录（默认常见的 dist）
+      artifact_path:
+        required: false
+        type: string
+        default: "dist"
+      env:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: "npm"
+
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build (prod)
+        run: npm run build:${{ inputs.working_directory }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: ${{ inputs.working_directory }}/${{ inputs.artifact_path }}
