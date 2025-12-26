@@ -40,7 +40,7 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Set up JDK 8
+      - name: Set up JDK {{ inputs.java_version }}
         uses: actions/setup-java@v4
         with:
           distribution: ${{ inputs.java_distribution }}
