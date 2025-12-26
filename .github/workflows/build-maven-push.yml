@@ -10,6 +10,14 @@ on:
         required: false
         type: string
         default: "nrt.ocir.io/idpdeuxb29fz/devops:openjdk17-alpine"
+            java_version:
+        required: false
+        type: string
+        default: "8"
+      java_distribution:
+        required: false
+        type: string
+        default: "temurin"
       env:
         required: true
         type: string
@@ -35,8 +43,8 @@ jobs:
       - name: Set up JDK 8
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: '8'
+          distribution: ${{ inputs.java_distribution }}
+          java-version: ${{ inputs.java_version }}
           cache: maven
 
       - name: Checkout Template Repo
