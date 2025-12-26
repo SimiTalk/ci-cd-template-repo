@@ -39,10 +39,10 @@ jobs:
           cache-dependency-path: ${{ inputs.working_directory }}/yarn.lock
 
       # 可选：避免 yarn 缓存目录不可写的 warning（你之前遇到过类似问题）
-      - name: Prepare Yarn Cache Dir
-        run: |
-          echo "YARN_CACHE_FOLDER=${{ runner.temp }}/.yarn-cache" >> $GITHUB_ENV
-          mkdir -p "${{ runner.temp }}/.yarn-cache"
+    #   - name: Prepare Yarn Cache Dir
+    #     run: |
+    #       echo "YARN_CACHE_FOLDER=${{ runner.temp }}/.yarn-cache" >> $GITHUB_ENV
+    #       mkdir -p "${{ runner.temp }}/.yarn-cache"
 
       - name: Install Dependencies
         run: yarn install --frozen-lockfile
