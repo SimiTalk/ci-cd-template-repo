@@ -1,0 +1,7 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+ARG artifact_dir=dist
+COPY ${artifact_dir}/ /usr/share/nginx/html/
+
+CMD ["nginx", "-g", "daemon off;"]

@@ -45,17 +45,49 @@ jobs:
 
       - name: Build (prod)
         run: npm run build:${{ inputs.env }}
-      
-      - name: Debug workspace
+            - name: Detect Version
+        id: detect
         run: |
-          echo "WORKSPACE=$GITHUB_WORKSPACE"
-          pwd
-          ls -lah
-          echo "Find dist/build:"
-          find . -maxdepth 4 -type d -name dist -o -name build
+          echo "GITHUB_REF=${GITHUB_REF}"
+          echo "GITHUB_REF_TYPE=${GITHUB_REF_TYPE}"
+          echo "GITHUB_REF_NAME=${GITHUB_REF_NAME}"
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION=$(echo "${GITHUB_REF_NAME}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+            if [[ -z "$VERSION" ]]; then
+              echo "❌ Tag 格式必须为 release-x.y.z"
+              exit 1
+            fi
+            IMAGE_TAG="$VERSION"
+          elif [[ "${GITHUB_REF_NAME}" == "blockchain-intl" ]]; then
+            IMAGE_TAG="latest"
+          else
+            echo "❌ 不支持的分支或 tag"
+            exit 1
+          fi
+
+          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: ${{ inputs.working_directory }}/${{ inputs.artifact_path }}
+
+      - name: Login to OCIR
+        env:
+          USER: ${{ secrets.OCIR_USERNAME }}
+          PASS: ${{ secrets.OCIR_AUTH_TOKEN }}
+          REG: ${{ secrets.IMAGE_REGISTRY }}
+        run: |
+          echo "${PASS}" | docker login "${REG}" -u "${USER}" --password-stdin
+
+      - name: Build & Push Docker Image
+        run: |
+          IMAGE="${{ secrets.IMAGE_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ inputs.service_name }}-${{ inputs.env }}:${{ steps.detect.outputs.image_tag }}"
+          echo "Building: $IMAGE"
+          docker build -t "$IMAGE" \
+            --build-arg BASE_IMAGE=${{ inputs.base_image }} \
+            --build-arg artifact_dir=${{ inputs.artifact_path }} \
+            -f template/docker/Dockerfile.node .
+          docker push "$IMAGE"
