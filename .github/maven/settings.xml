@@ -1,11 +1,14 @@
 <settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0
+                              https://maven.apache.org/xsd/settings-1.2.0.xsd">
 
+  <!-- 本地仓库 -->
   <localRepository>${user.home}/.m2/repository</localRepository>
 
   <mirrors>
-    <!-- 只阻止 HTTP 仓库，避免被注入不安全源；HTTPS 正常用 -->
+
+    <!--拦截所有 HTTP 仓库（安全） -->
     <mirror>
       <id>maven-default-http-blocker</id>
       <mirrorOf>external:http:*</mirrorOf>
@@ -13,6 +16,15 @@
       <url>http://0.0.0.0/</url>
       <blocked>true</blocked>
     </mirror>
+
+    <!-- 统一使用 HTTPS Maven 镜像（关键） -->
+    <mirror>
+      <id>aliyun-maven</id>
+      <mirrorOf>*</mirrorOf>
+      <name>Aliyun Maven Mirror</name>
+      <url>https://maven.aliyun.com/repository/public</url>
+    </mirror>
+
   </mirrors>
 
 </settings>
